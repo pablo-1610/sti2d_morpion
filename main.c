@@ -53,32 +53,51 @@ int winPossibilities[8][3] = {
 };
 
 int aiGetCase() {
-    int winningForSure = -1, justAdd = -1;
-
+    /// Mon symbole
     char* symbol = symbols[1];
     int probaId, probaCaseId;
+    /// Failover
+    int failOverCase = 0;
+    /// Démarrage d'un combo
+    int comboStartCaseLenght = 0;
+    int comboStartCases[50] = {};
+    /// Démarrage du check de toutes les probabilités
     for (probaId = 0; probaId < 8; probaId++) {
         int owned = 0, free = 0, occupied = 0;
+        int freeCase = 0;
+        /// Analyse de chaque case
         for (probaCaseId = 0; probaCaseId < 3; probaCaseId++) {
-            if(positions[winPossibilities[probaId][probaCaseId]] == "_") free++;
+            if(positions[winPossibilities[probaId][probaCaseId]] == "_") {
+                    freeCase = winPossibilities[probaId][probaCaseId];
+                    free++;
+            }
             if(positions[winPossibilities[probaId][probaCaseId]] == symbol) owned++;
             if(positions[winPossibilities[probaId][probaCaseId]] == symbols[0]) occupied++;
         }
-        // Sur de gagner
+        /// Attribution du failover
+        if(free >= 1) {
+            failOverCase = freeCase;
+        }
+        /// Sur de gagner
         if(owned == 2 && free >= 1) {
-            winningForSure = probaId;
-            continue;
+            printf("\nRetourne sur de gagner (%i)", freeCase);
+            return freeCase;
         }
-        if(free >= 1 && occupied == 0) {
-            justAdd = probaId;
+        /// Bloquer une victoire
+        // TODO Faire l'antivictoire
+        /// Case libre
+        if(free == 3) {
+            /// Retourne une case libre pour commencer un combo
+            comboStartCases[comboStartCaseLenght] = freeCase;
+            comboStartCaseLenght++;
         }
     }
-    if(winningForSure > -1) {
-        printf("\nJe retourne %i", winningForSure);
-        return winningForSure;
+    /// Démarrage d'une série quelconque
+    if(comboStartCaseLenght > 0) {
+        return comboStartCases[rand()%comboStartCaseLenght];
     }
-    printf("\nJe retourne justadd avec %i", justAdd);
-    return justAdd > -1 ? justAdd : 100;
+    /// Aucun combo fiable trouvé, l'IA retourne une case libre quelconque
+    return failOverCase;
 }
 
 
@@ -133,24 +152,25 @@ void applySelectionToCase(int caseId) {
 void doTurn(int help, int isIa) {
     clearAll();
     if (help) {
-        printf("     <<<< Morpion >>>>\n   By Pablo Z & Neil T\n\nBienvenue sur le jeu du Morpion !\nBattez votre adversaire en remplissant une s�rie de case\nDiagonales, verticales et horizontales");
+        printf("     <<<< Morpion >>>>\n   By Pablo Z & Neil T\n\nBienvenue sur le jeu du Morpion !\nBattez votre adversaire en remplissant une série de case\nDiagonales, verticales et horizontales");
     }
     printf("\n\n%sGrille actuelle, tour %i:\n\n", prefix, turn);
     draw();
-    printf(isIa && currentPlayer == 2 ? "\n%sC'est � l'IA (joueur %i) de jouer..." : "\n%sC'est au joueur %i de jouer, indiquz une case : ", prefix, currentPlayer);
+    printf(isIa && currentPlayer == 2 ? "\n%sC'est a l'IA (joueur %i) de jouer..." : "\n%sC'est au joueur %i de jouer, indiquz une case : ", prefix, currentPlayer);
     if (isIa && currentPlayer != 2) {
         int selection = requestCaseNum();
         applySelectionToCase(selection);
-        int win = checkWinner();
-        if (win > 0) {
-            clearAll();
-            draw();
-            printf(win == 100 ? "\n\n%sFin de la partie, le systeme a retourne un code %i, match nul !" : "\n\n%sFin de la partie ! Le joueur %i gagne !\n\n", prefix, win);
-            exit(0);
-        }
     } else {
         int caseId = aiGetCase();
+        if(caseId == 9000) return;
         positions[caseId] = symbols[1];
+    }
+    int win = checkWinner();
+    if (win > 0) {
+        clearAll();
+        draw();
+        printf(win == 100 ? "\n\n%sFin de la partie, le systeme a retourne un code %i, match nul !" : "\n\n%sFin de la partie ! Le joueur %i gagne !\n\n", prefix, win);
+        exit(0);
     }
     currentPlayer++;
     turn++;
