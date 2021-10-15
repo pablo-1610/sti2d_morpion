@@ -83,8 +83,16 @@ int aiGetCase() {
             printf("\nRetourne sur de gagner (%i)", freeCase);
             return freeCase;
         }
+
+        
         /// Bloquer une victoire
+
         // TODO Faire l'antivictoire
+        if(occupied == 2 && free  == 1){
+            // completer la ligne !
+            return freeCase;
+        }
+
         /// Case libre
         if(free == 3) {
             /// Retourne une case libre pour commencer un combo
